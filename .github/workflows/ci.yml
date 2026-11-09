@@ -1,3 +1,4 @@
+
 name: Mlearning CI
 
 on:
@@ -8,6 +9,7 @@ on:
 
 jobs:
   test:
+    name: Test and Coverage
     runs-on: ubuntu-latest
 
     steps:
@@ -23,8 +25,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run unit tests
+      - name: Run Jest tests
         run: npm test
 
       - name: Generate coverage report
         run: npm run test:coverage
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          if-no-files-found: error

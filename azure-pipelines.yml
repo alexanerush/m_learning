@@ -5,18 +5,26 @@ trigger:
 pr:
   - main
 
+parameters:
+  - name: deployToAzure
+    displayName: Deploy to Azure App Service
+    type: boolean
+    default: false
+
 pool:
   vmImage: ubuntu-latest
 
 variables:
   nodeVersion: '22.x'
+  azureServiceConnection: 'REPLACE_WITH_SERVICE_CONNECTION'
+  azureWebAppName: 'REPLACE_WITH_WEB_APP_NAME'
 
 stages:
   - stage: BuildAndTest
     displayName: Build and Test
     jobs:
       - job: Test
-        displayName: Install dependencies and run tests
+        displayName: Test Node.js API
         steps:
           - task: NodeTool@0
             displayName: Install Node.js
@@ -30,12 +38,52 @@ stages:
             displayName: Run Jest tests
 
           - script: npm run test:coverage
-            displayName: Generate test coverage
+            displayName: Generate coverage report
 
-          - task: PublishTestResults@2
-            displayName: Publish test results
-            condition: always()
+          - task: PublishPipelineArtifact@1
+            displayName: Publish coverage files
+            condition: succeeded()
             inputs:
-              testResultsFormat: JUnit
-              testResultsFiles: '**/junit.xml'
-              failTaskOnMissingResultsFile: false
+              targetPath: coverage
+              artifact: coverage-report
+
+          - script: |
+              mkdir -p deployment
+              cp package.json package-lock.json deployment/
+              cp *.js deployment/
+              cp -r node_modules deployment/
+              cd deployment
+              zip -qr ../mlearning-deploy.zip .
+            displayName: Package application
+            condition: succeeded()
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publish deployment package
+            inputs:
+              targetPath: mlearning-deploy.zip
+              artifact: app-package
+
+  - stage: Deploy
+    displayName: Deploy to Azure
+    dependsOn: BuildAndTest
+    condition: and(succeeded(), eq('${{ parameters.deployToAzure }}', 'true'), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: DeployWebApp
+        displayName: Deploy Node.js application
+        environment: production
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: app-package
+
+                - task: AzureWebApp@1
+                  displayName: Deploy to Azure App Service
+                  inputs:
+                    azureSubscription: $(azureServiceConnection)
+                    appType: webAppLinux
+                    appName: $(azureWebAppName)
+                    package: $(Pipeline.Workspace)/app-package/mlearning-deploy.zip
+                    runtimeStack: NODE|22-lts
+                    startUpCommand: npm start

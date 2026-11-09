@@ -1,0 +1,17 @@
+
+services:
+  mlearning:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_DIALECT: sqlite
+      SQLITE_STORAGE: /app/data/mlearning.sqlite
+    volumes:
+      - mlearning_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  mlearning_data:

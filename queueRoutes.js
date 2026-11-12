@@ -7,13 +7,21 @@ const {
   getQueueStatus,
 } = require("./queueReader");
 
+function getAzureServiceBus() {
+  return require("./serviceBus");
+}
+
 const router = express.Router();
+
+function isAzure() {
+  return process.env.QUEUE_PROVIDER === "azure";
+}
 
 /**
  * @swagger
  * /queue/send:
  *   post:
- *     summary: Send a message to the persistent queue
+ *     summary: Send a message to the secondary queue
  *     tags: [Queue Reader]
  *     requestBody:
  *       required: true
@@ -25,14 +33,14 @@ const router = express.Router();
  *             properties:
  *               message:
  *                 type: string
- *                 example: Hello from persistent queue!
+ *                 example: Hello from Azure!
  *     responses:
  *       201:
- *         description: Message saved to SQLite queue
+ *         description: Message sent successfully
  *       400:
  *         description: Invalid message
  *       500:
- *         description: Database error
+ *         description: Queue error
  */
 router.post("/send", async (req, res) => {
   const { message } = req.body || {};
@@ -45,10 +53,25 @@ router.post("/send", async (req, res) => {
   }
 
   try {
+    if (isAzure()) {
+      const result = await getAzureServiceBus().sendMessage(
+        message,
+        "secondary"
+      );
+
+      return res.status(201).json({
+        success: true,
+        provider: "azure",
+        message: "Message sent to Azure Service Bus",
+        data: result,
+      });
+    }
+
     const result = await addIncomingMessage(message);
 
     return res.status(201).json({
       success: true,
+      provider: "local",
       message: "Message saved to persistent queue",
       data: result,
     });
@@ -57,7 +80,7 @@ router.post("/send", async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      error: "Failed to save message",
+      error: "Failed to send message",
     });
   }
 });
@@ -66,21 +89,36 @@ router.post("/send", async (req, res) => {
  * @swagger
  * /queue/process:
  *   post:
- *     summary: Manually process the next queued message
+ *     summary: Process messages from the secondary queue
  *     tags: [Queue Reader]
  *     responses:
  *       200:
- *         description: Message processed or queue empty
+ *         description: Messages processed
  *       500:
  *         description: Processing error
  */
 router.post("/process", async (req, res) => {
   try {
+    if (isAzure()) {
+      const messages = await getAzureServiceBus().receiveMessages(
+        "secondary",
+        10
+      );
+
+      return res.json({
+        success: true,
+        provider: "azure",
+        processedCount: messages.length,
+        data: messages,
+      });
+    }
+
     const processed = await processNextMessage();
 
     if (!processed) {
       return res.json({
         success: true,
+        provider: "local",
         message: "Queue is empty or worker is busy",
         data: null,
       });
@@ -88,6 +126,7 @@ router.post("/process", async (req, res) => {
 
     return res.json({
       success: processed.status === "processed",
+      provider: "local",
       message:
         processed.status === "processed"
           ? "Message processed successfully"
@@ -108,20 +147,33 @@ router.post("/process", async (req, res) => {
  * @swagger
  * /queue/status:
  *   get:
- *     summary: Get persistent queue status
+ *     summary: Get queue provider and status
  *     tags: [Queue Reader]
  *     responses:
  *       200:
- *         description: Pending, processed and failed messages
+ *         description: Queue status
  *       500:
- *         description: Database error
+ *         description: Queue error
  */
 router.get("/status", async (req, res) => {
   try {
+    if (isAzure()) {
+      return res.json({
+        success: true,
+        provider: "azure",
+        queue:
+          process.env
+            .AZURE_SERVICE_BUS_SECOND_QUEUE_NAME,
+        message:
+          "Azure Service Bus is configured. Use Azure Portal to view queue metrics.",
+      });
+    }
+
     const status = await getQueueStatus();
 
     return res.json({
       success: true,
+      provider: "local",
       ...status,
     });
   } catch (error) {

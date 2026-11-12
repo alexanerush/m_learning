@@ -6,8 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "NODE_ENV=test jest --runInBand",
-    "test:coverage": "NODE_ENV=test jest --coverage --runInBand"
+    "test": "NODE_ENV=test QUEUE_PROVIDER=local jest --runInBand",
+    "test:coverage": "NODE_ENV=test QUEUE_PROVIDER=local jest --coverage --runInBand"
   },
   "dependencies": {
     "@azure/service-bus": "^7.10.0",

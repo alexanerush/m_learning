@@ -26,7 +26,7 @@ const swaggerOptions = {
       version: '3.0.0',
       description: 'Cloud Practice API with SQLite, Queue and Monitoring'
     },
-    servers: [{ url: `http://localhost:${PORT}` }],
+    servers: [{ url: '/' }],
     components: {
       schemas: {
         User: {

@@ -1,104 +1,274 @@
+
 # Mlearning API
 
-**Cloud Practice Project | Node.js · Express · SQLite · Swagger · Jest**
+**University Cloud Computing Practice | Node.js · Express · Microsoft Azure**
 
-A RESTful API developed as part of a university cloud computing practice project. The application demonstrates backend development, database operations, message queue processing, API documentation, automated testing, and application monitoring.
+A cloud-based REST API developed for a university assignment. The project demonstrates cloud deployment, relational database operations, asynchronous messaging, automated testing, health monitoring, and Prometheus-compatible metrics.
 
-The project currently runs locally and is structured for future integration with Microsoft Azure services and CI/CD workflows.
+## Live Deployment
 
-![Node.js](https://img.shields.io/badge/Node.js-22-339933?logo=nodedotjs&logoColor=white)
-![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)
-![SQLite](https://img.shields.io/badge/SQLite-Database-003B57?logo=sqlite&logoColor=white)
-![Jest](https://img.shields.io/badge/Jest-Testing-C21325?logo=jest&logoColor=white)
-![Swagger](https://img.shields.io/badge/Swagger-OpenAPI-85EA2D?logo=swagger&logoColor=black)
-![License](https://img.shields.io/badge/License-ISC-blue)
+- **API:** https://mlearning-api.purpleground-c0374063.germanywestcentral.azurecontainerapps.io
+- **Swagger UI:** https://mlearning-api.purpleground-c0374063.germanywestcentral.azurecontainerapps.io/swagger/
+- **Health Check:** https://mlearning-api.purpleground-c0374063.germanywestcentral.azurecontainerapps.io/health
+- **Metrics:** https://mlearning-api.purpleground-c0374063.germanywestcentral.azurecontainerapps.io/metrics
 
----
+> Cloud endpoints are available while the corresponding Azure resources remain active.
 
-## Features
+## Implemented Features
 
-- RESTful API built with Express.js
-- User and task management with CRUD operations
-- SQLite database using Sequelize ORM
-- User-to-task database relationships
-- Local message queue simulation
-- Secondary queue with message processing functionality
-- Interactive Swagger / OpenAPI documentation
-- Health monitoring endpoint
-- Prometheus-compatible application metrics
-- Automated unit testing with Jest
+- REST API using Node.js and Express
+- Swagger/OpenAPI documentation
+- Docker containerization
+- Cloud deployment using Azure Container Apps
+- Azure SQL Database integration
+- Database tables: Users, Tasks, and QueueMessages
+- CRUD operations for users and tasks
+- Azure Service Bus integration
+- Two active Service Bus queues
+- Message sending and processing
+- Automated tests using Jest and Supertest
+- 26 passing tests across 3 test suites
+- Application health checks
+- Prometheus-compatible metrics
 - Azure Pipelines YAML configuration
 
 ## Technology Stack
 
-| Category | Technology |
+| Component | Technology |
 |---|---|
-| Runtime | Node.js |
-| Backend | Express.js |
-| Database | SQLite |
+| Backend | Node.js, Express |
 | ORM | Sequelize |
-| API Documentation | Swagger UI, OpenAPI 3.0 |
-| Messaging | Local in-memory queues |
-| Cloud Integration | Azure Service Bus SDK |
+| Cloud Database | Azure SQL Database |
+| Local Database | SQLite |
+| Messaging | Azure Service Bus |
+| Containerization | Docker |
+| Cloud Hosting | Azure Container Apps |
+| Documentation | Swagger / OpenAPI |
 | Testing | Jest, Supertest |
-| Monitoring | Prometheus Client |
+| Monitoring | prom-client |
+| CI/CD Configuration | Azure Pipelines YAML |
 | Version Control | Git, GitHub |
-| CI/CD Configuration | Azure Pipelines |
 
-## Architecture
-
-```text
-                    CLIENT
-                       |
-                       v
-                 EXPRESS API
-                       |
-          +------------+-------------+
-          |            |             |
-          v            v             v
-      CRUD API     QUEUE API     MONITORING
-          |            |             |
-          v            v             v
-      SEQUELIZE    LOCAL QUEUES    PROMETHEUS
-          |            |
-          v            v
-        SQLITE     QUEUE READER
-```
-
-The application follows a modular backend structure, separating database configuration, queue management, monitoring, and HTTP routes.
-
-## Project Structure
+## System Architecture
 
 ```text
-mlearning/
-|
-|-- index.js
-|-- database.js
-|-- localQueue.js
-|-- queueReader.js
-|-- queueRoutes.js
-|-- serviceBus.js
-|-- metrics.js
-|
-|-- tests/
-|   |-- database.test.js
-|
-|-- azure-pipelines.yml
-|-- package.json
-|-- package-lock.json
-|-- .gitignore
-|-- README.md
+             Client / Swagger UI
+                     |
+                     v
+              REST API (Express)
+                     |
+                     v
+             Azure Container Apps
+                     |
+           +---------+---------+
+           |                   |
+           v                   v
+    Azure SQL Database   Azure Service Bus
+           |                   |
+    +------+------+       +----+----+
+    |      |      |       |         |
+  Users  Tasks  Queue   Primary  Processing
+                Messages Queue     Queue
+
+Additional endpoints:
+  /health  -> Health Monitoring
+  /metrics -> Prometheus Metrics
 ```
 
-## Getting Started
+## Azure Infrastructure
 
-### Prerequisites
+All cloud resources are located in the same resource group.
 
-- Node.js
-- npm
-- Git
+**Resource Group:** `mlearning-rg`
 
-### Installation
+**Region:** Germany West Central
+
+| Resource | Name |
+|---|---|
+| Container App | `mlearning-api` |
+| Container Apps Environment | `managedEnvironment-mlearningrg-a92b` |
+| SQL Server | `mlearning-sql-2026` |
+| SQL Database | `mlearning-db` |
+| Service Bus Namespace | `mlearning-servicebus-2026` |
+
+### Azure Container Apps
+
+The backend is packaged into a Docker container and deployed using Azure Container Apps.
+
+The application provides a public HTTPS endpoint and interactive Swagger documentation.
+
+### Azure SQL Database
+
+The application uses Azure SQL Database for persistent data storage.
+
+Three database tables are available:
+
+- `Users` — user information
+- `Tasks` — task records
+- `QueueMessages` — message-related records
+
+Database operations are implemented through the REST API using Sequelize.
+
+### Azure Service Bus
+
+The Service Bus namespace uses the Basic pricing tier.
+
+Two queues are configured:
+
+- `mlearning-queue`
+- `mlearning-processing-queue`
+
+Both queues are active.
+
+The API supports sending messages to the secondary queue and processing pending messages.
+
+## REST API Endpoints
+
+### System
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/` | API information |
+| GET | `/health` | Application health |
+| GET | `/metrics` | Prometheus metrics |
+
+### Users
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/users` | Create a user |
+| GET | `/users` | Get all users |
+| GET | `/users/:id` | Get a user by ID |
+| PUT | `/users/:id` | Update a user |
+| DELETE | `/users/:id` | Delete a user |
+
+### Tasks
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/tasks` | Create a task |
+| GET | `/tasks` | Get all tasks |
+| GET | `/tasks/:id` | Get a task by ID |
+| PUT | `/tasks/:id` | Update a task |
+| DELETE | `/tasks/:id` | Delete a task |
+
+### Messages and Queues
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/messages` | Send a message |
+| GET | `/messages` | Retrieve messages |
+| POST | `/queue/send` | Send a message to the secondary queue |
+| POST | `/queue/process` | Process pending messages |
+| GET | `/queue/status` | Check queue status |
+
+## CRUD Operations
+
+The application supports full CRUD operations for users and tasks.
+
+Implemented functionality includes:
+
+1. Creating database records
+2. Retrieving existing records
+3. Updating stored information
+4. Deleting records
+5. Handling requests for nonexistent records
+
+Database operations were successfully tested against the deployed Azure API using Swagger UI.
+
+## Azure Service Bus Integration
+
+Azure Service Bus is used for asynchronous message communication.
+
+### Sending Messages
+
+**Endpoint:** `POST /queue/send`
+
+Example request:
+
+```json
+{
+  "message": "Azure Service Bus demo"
+}
+```
+
+Successful requests return HTTP `201 Created`.
+
+Example response:
+
+```json
+{
+  "success": true,
+  "provider": "azure",
+  "message": "Message sent to Azure Service Bus",
+  "data": {
+    "success": true,
+    "queue": "secondary",
+    "message": "Azure Service Bus demo"
+  }
+}
+```
+
+### Processing Messages
+
+**Endpoint:** `POST /queue/process`
+
+This endpoint retrieves and processes pending messages from the secondary queue.
+
+The response includes:
+
+- Processing status
+- Messaging provider
+- Number of processed messages
+- Processed message data
+
+Successful processing can also be verified through the message counters in Azure Portal.
+
+## Automated Testing
+
+The project uses Jest and Supertest for automated testing.
+
+Tests cover API functionality, database operations, and application behavior.
+
+Run tests:
+
+```bash
+npm test
+```
+
+### Test Results
+
+```text
+Test Suites: 3 passed, 3 total
+Tests:       26 passed, 26 total
+```
+
+All 26 tests passed during the latest test execution.
+
+## Health Monitoring
+
+**Endpoint:** `GET /health`
+
+The health endpoint provides information about application availability and database connectivity.
+
+It can be used to verify the operational status of the deployed API.
+
+## Prometheus Metrics
+
+**Endpoint:** `GET /metrics`
+
+Metrics are collected using the `prom-client` library.
+
+Available metrics include:
+
+- CPU usage
+- Memory consumption
+- Node.js runtime statistics
+- Event loop performance
+
+The metrics endpoint returns data in Prometheus-compatible format.
+
+## Local Development
 
 Clone the repository:
 
@@ -113,241 +283,77 @@ Install dependencies:
 npm ci
 ```
 
-Create a `.env` file in the project root:
+Configure the required environment variables in a local `.env` file.
 
-```env
-PORT=3000
-```
+Do not commit credentials or connection strings to the repository.
 
-Additional Azure Service Bus configuration can be added when a valid Azure connection is available.
-
-### Run the Application
+Start the application:
 
 ```bash
 npm start
 ```
 
-For development with automatic restart:
+Local Swagger UI:
 
-```bash
-npm run dev
-```
+http://localhost:3000/swagger/
 
-The API will be available at:
+## CI/CD Configuration
 
-```text
-http://localhost:3000
-```
+The repository includes an `azure-pipelines.yml` file prepared for Azure DevOps integration.
 
-### API Documentation
+The YAML configuration was created as part of the cloud computing assignment.
 
-Open Swagger UI:
+However, the pipeline could not be fully executed because of Azure DevOps access restrictions.
 
-**http://localhost:3000/swagger/**
+Therefore, the CI/CD configuration is included in the repository, but a complete automated deployment pipeline has not been demonstrated.
 
-Swagger provides interactive documentation and allows API requests to be executed directly from the browser.
+## Azure Subscription Limitations
 
-## API Endpoints
+During development, several restrictions were encountered with the available Microsoft Azure Student/Free Trial subscription.
 
-### System
+### Azure App Service Quota
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/` | Check API status |
+The original assignment required deployment using Azure App Service Web App.
 
-### Users
+However, the subscription did not provide the required App Service quota.
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/users` | Create a user |
-| GET | `/users` | Retrieve all users |
-| GET | `/users/:id` | Retrieve a user by ID |
-| PUT | `/users/:id` | Update a user |
-| DELETE | `/users/:id` | Delete a user |
+As an alternative, the application was successfully deployed using Azure Container Apps.
 
-### Tasks
+This allowed the REST API to remain publicly accessible and maintain the required functionality.
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/tasks` | Create a task |
-| GET | `/tasks` | Retrieve all tasks |
-| GET | `/tasks/:id` | Retrieve a task by ID |
-| PUT | `/tasks/:id` | Update a task |
-| DELETE | `/tasks/:id` | Delete a task |
+### Azure SQL Free-Tier Limits
 
-### Message Queues
+The free Azure SQL Database usage allowance was exhausted during development.
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/messages` | Send a message to the primary local queue |
-| GET | `/messages` | Retrieve messages |
-| POST | `/queue/send` | Add a message to the secondary queue |
-| POST | `/queue/process` | Process the next queued message |
-| GET | `/queue/status` | View pending and processed messages |
+This introduced additional resource and billing restrictions.
 
-### Monitoring
+Despite these limitations, the database integration and CRUD operations were successfully implemented and tested.
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/health` | Check application and database health |
-| GET | `/metrics` | Retrieve Prometheus metrics |
+### Azure DevOps Restrictions
 
-## Example API Requests
+Azure DevOps access restrictions prevented the complete setup and execution of the CI/CD pipeline.
 
-### Create a User
+The YAML configuration was prepared and committed to the repository, but the automated pipeline could not be fully demonstrated.
 
-**POST `/users`**
+### Implementation Summary
 
-```json
-{
-  "name": "Alexandra",
-  "email": "alexandra@example.com"
-}
-```
+Almost all assignment requirements were successfully implemented.
 
-### Create a Task
+The project includes:
 
-**POST `/tasks`**
+- A deployed cloud REST API
+- Azure SQL Database integration
+- Two Azure Service Bus queues
+- CRUD operations
+- Message sending and processing
+- Automated tests
+- Health checks
+- Prometheus-compatible metrics
 
-```json
-{
-  "title": "Complete Cloud Practice",
-  "description": "Implement and test REST API",
-  "completed": false,
-  "userId": 1
-}
-```
-
-### Send a Queue Message
-
-**POST `/queue/send`**
-
-```json
-{
-  "message": "Hello from the secondary queue!"
-}
-```
-
-Process the next message using:
-
-```text
-POST /queue/process
-```
-
-Check queue status using:
-
-```text
-GET /queue/status
-```
-
-## Database
-
-The project uses SQLite with Sequelize ORM.
-
-Two primary models are implemented:
-
-**User**
-- id
-- name
-- email
-
-**Task**
-- id
-- title
-- description
-- completed
-- userId
-
-A one-to-many relationship connects users and tasks.
-
-The local database file is excluded from Git tracking.
-
-## Automated Testing
-
-Unit tests are implemented using Jest.
-
-Run tests:
-
-```bash
-npm test
-```
-
-Generate coverage information:
-
-```bash
-npm run test:coverage
-```
-
-### Latest Local Test Result
-
-```text
-PASS tests/database.test.js
-
-Test Suites: 1 passed, 1 total
-Tests:       4 passed, 4 total
-```
-
-The tests cover user creation, task creation, task updates, and task deletion.
-
-## Monitoring
-
-The application exposes two monitoring endpoints.
-
-**Health Check**
-
-```text
-GET /health
-```
-
-Verifies application and database connectivity.
-
-**Prometheus Metrics**
-
-```text
-GET /metrics
-```
-
-Exposes application and HTTP request metrics in Prometheus-compatible format.
-
-## CI/CD
-
-The repository contains an `azure-pipelines.yml` configuration intended for Azure DevOps integration.
-
-The pipeline is designed to:
-
-1. Install Node.js
-2. Install project dependencies
-3. Run automated tests
-4. Generate test coverage information
-
-Azure DevOps pipeline execution and cloud deployment are not yet configured.
-
-## Azure Integration Status
-
-The project includes the Azure Service Bus SDK and a separate integration module.
-
-Currently, messaging is implemented using local in-memory queues. The application is not yet deployed to Azure, and the SQLite database is not an Azure SQL Database.
-
-Future development includes:
-
-- Connecting to Azure Service Bus queues
-- Migrating persistence to Azure SQL
-- Deploying the application to Azure App Service
-- Configuring Azure DevOps CI/CD deployment
-
-## Current Limitations
-
-- Local queue messages are lost when the server restarts.
-- SQLite is intended for local development.
-- Queue processing is manually triggered through an API endpoint.
-- Cloud deployment requires a configured Azure environment.
+The remaining incomplete requirements were caused by Azure subscription quotas and service access restrictions.
 
 ## Author
 
 **Alexandra Nerush**
 
-GitHub: [@alexanerush](https://github.com/alexanerush)
-
-## License
-
-This project is licensed under the ISC License.
+GitHub: https://github.com/alexanerush
